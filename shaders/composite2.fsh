@@ -56,7 +56,13 @@ void main() {
     vec2 sunScreenPos = sunNdc.xy * 0.5 + 0.5;
     if (sunClip.w < 0.0) return;
 
-    vec2 deltaUV = (texcoord - sunScreenPos) * (1.0 / float(GODRAY_SAMPLES)) * GODRAY_DENSITY;
+    vec2 clampedSunPos = clamp(sunScreenPos, 0.0, 1.0);
+    float offScreenDist = length(sunScreenPos - clampedSunPos);
+    float edgeFade = exp(-offScreenDist * 6.0);
+
+    if (edgeFade < 0.01) return;
+
+    vec2 deltaUV = (texcoord - clampedSunPos) * (1.0 / float(GODRAY_SAMPLES)) * GODRAY_DENSITY;
     vec2 uv = texcoord;
     float intensityDecay = 1.0;
     vec3 godray = vec3(0.0);
@@ -74,6 +80,6 @@ void main() {
     }
 
     vec3 volumetricGodray = upsampleGodray(texcoord);
-    color.rgb += godray * GODRAY_EXPOSURE + volumetricGodray;
+    color.rgb += godray * GODRAY_EXPOSURE * edgeFade + volumetricGodray;
     color.a = 1.0;
 }
