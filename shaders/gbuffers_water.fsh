@@ -9,8 +9,9 @@ in vec2 lmcoord;
 in vec2 texcoord;
 in vec4 glcolor;
 
-/* RENDERTARGETS: 0 */
+/* RENDERTARGETS: 0,4 */
 layout(location = 0) out vec4 color;
+layout(location = 1) out vec4 translucentColor;
 
 void main() {
 	color = texture(gtexture, texcoord) * glcolor;
@@ -19,4 +20,5 @@ void main() {
 	if (color.a < alphaTestRef) {
 		discard;
 	}
+	translucentColor = vec4(color.rgb, 1.0);
 }

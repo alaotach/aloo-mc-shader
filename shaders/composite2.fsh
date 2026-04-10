@@ -2,6 +2,7 @@
 
 uniform sampler2D colortex0;
 uniform sampler2D colortex3;
+uniform sampler2D colortex4; // Translucents (e.g. glass/water)
 uniform sampler2D depthtex0;
 uniform vec3 shadowLightPosition;
 
@@ -73,7 +74,14 @@ void main() {
 
         float depth = texture(depthtex0, uv).r;
         float isSky = step(0.9999, depth);
-        vec3 sample = texture(colortex0, uv).rgb * isSky;
+        
+        vec3 mainSample = texture(colortex0, uv).rgb;
+        vec4 transSample = texture(colortex4, uv);
+        
+        float isTranslucent = step(0.01, transSample.a);
+        float validSource = max(isSky, isTranslucent);
+
+        vec3 sample = mainSample * validSource;
 
         godray += sample * intensityDecay * GODRAY_WEIGHT;
         intensityDecay *= GODRAY_DECAY;
