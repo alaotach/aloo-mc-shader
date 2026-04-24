@@ -20,7 +20,7 @@ uniform int frameCounter;
 
 const float FOG_DENSITY = 5.0;
 const int GODRAY_SAMPLES = 30;
-const float GODRAY_STRENGTH = 0.05;
+const float GODRAY_STRENGTH = 0.058;
 const float SHADOW_PCF_RADIUS = 1.25;
 const float VOLUMETRIC_SIZE = 2.0;
 
@@ -115,8 +115,10 @@ void main() {
 
     vec3 rayDir = normalize(viewPos);
 
-    float sunScattering = max(dot(rayDir, sunViewDir), 0.0);
-    float phaseFunction = 1.0 + pow(sunScattering, 6.0) * 4.0;
+    float forwardScattering = clamp(dot(rayDir, sunViewDir), 0.0, 1.0);
+    float backwardScattering = clamp(dot(rayDir, -sunViewDir), 0.0, 1.0);
+    float cinematicScattering = max(forwardScattering, backwardScattering * 0.85);
+    float phaseFunction = 1.08 + pow(cinematicScattering, 2.0) * 1.95;
     vec2 jitterSeed = r2Sequence(float(frameCounter)) * 256.0;
     float noise = interleavedGradientNoise(floor(gl_FragCoord.xy / VOLUMETRIC_SIZE) + jitterSeed);
     float baseSteps = float(GODRAY_SAMPLES);
@@ -170,12 +172,14 @@ void main() {
         t += stepSize;
     }
     intensity = 1.0 - exp(-intensity);
+    intensity = pow(clamp(intensity, 0.0, 1.0), 0.9);
 
     float warmTint = smoothstep(0.0, 0.15, sunElevation);
     vec3 sunriseTint = mix(vec3(1.25, 0.72, 0.42), vec3(1.0, 0.95, 0.8), warmTint);
     vec3 moonTint = vec3(0.03, 0.07, 0.15);
     vec3 baseRayColor = mix(moonTint, sunriseTint, timeMask);
-    vec3 currentGodray = baseRayColor * intensity * GODRAY_STRENGTH * phaseFunction;
+    float offAngleLift = mix(1.18, 1.0, forwardScattering);
+    vec3 currentGodray = baseRayColor * intensity * GODRAY_STRENGTH * phaseFunction * offAngleLift;
     vec3 temporalGodray = currentGodray;
     godrayOut = vec4(temporalGodray, 1.0);
 

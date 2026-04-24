@@ -13,7 +13,9 @@ const int GODRAY_SAMPLES = 80;
 const float GODRAY_DENSITY = 0.95;
 const float GODRAY_WEIGHT = 0.012;
 const float GODRAY_DECAY = 0.97;
-const float GODRAY_EXPOSURE = 1.25;
+const float GODRAY_EXPOSURE = 1.1;
+const float VOLUMETRIC_EXPOSURE = 0.95;
+const float RAY_SOFT_CLIP = 1.35;
 
 in vec2 texcoord;
 
@@ -37,7 +39,7 @@ vec3 upsampleGodray(vec2 uv) {
       vec2 suv = uv + off;
 
       float d = texture(depthtex0, suv).r;
-      float depthWeight = exp(-abs(d - centerDepth) * 400.0);
+      float depthWeight = exp(-abs(d - centerDepth) * 120.0);
       float wx = (x == 0) ? 2.0 : 1.0;
       float wy = (y == 0) ? 2.0 : 1.0;
       float w = wx * wy * depthWeight;
@@ -52,32 +54,32 @@ vec3 upsampleGodray(vec2 uv) {
 
 void main() {
     color = texture(colortex0, texcoord);
+  vec3 godray = vec3(0.0);
+  float edgeFade = 0.0;
+
     vec4 sunClip = gbufferProjection * vec4(shadowLightPosition * 1000.0, 1.0);
+  if (sunClip.w > 0.0) {
     vec3 sunNdc = sunClip.xyz / sunClip.w;
     vec2 sunScreenPos = sunNdc.xy * 0.5 + 0.5;
-    if (sunClip.w < 0.0) return;
-
     vec2 clampedSunPos = clamp(sunScreenPos, 0.0, 1.0);
     float offScreenDist = length(sunScreenPos - clampedSunPos);
-    float edgeFade = exp(-offScreenDist * 6.0);
+    edgeFade = exp(-offScreenDist * 2.0);
 
-    if (edgeFade < 0.01) return;
+    if (edgeFade > 0.001) {
+      vec2 deltaUV = (texcoord - clampedSunPos) * (1.0 / float(GODRAY_SAMPLES)) * GODRAY_DENSITY;
+      vec2 uv = texcoord;
+      float intensityDecay = 1.0;
 
-    vec2 deltaUV = (texcoord - clampedSunPos) * (1.0 / float(GODRAY_SAMPLES)) * GODRAY_DENSITY;
-    vec2 uv = texcoord;
-    float intensityDecay = 1.0;
-    vec3 godray = vec3(0.0);
-
-    for (int i = 0; i < GODRAY_SAMPLES; i++) {
+      for (int i = 0; i < GODRAY_SAMPLES; i++) {
         uv -= deltaUV;
         if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) break;
 
         float depth = texture(depthtex0, uv).r;
         float isSky = step(0.9999, depth);
-        
+                
         vec3 mainSample = texture(colortex0, uv).rgb;
         vec4 transSample = texture(colortex4, uv);
-        
+                
         float isTranslucent = step(0.01, transSample.a);
         float validSource = max(isSky, isTranslucent);
 
@@ -85,9 +87,13 @@ void main() {
 
         godray += sample * intensityDecay * GODRAY_WEIGHT;
         intensityDecay *= GODRAY_DECAY;
+      }
+    }
     }
 
-    vec3 volumetricGodray = upsampleGodray(texcoord);
-    color.rgb += godray * GODRAY_EXPOSURE * edgeFade + volumetricGodray;
+  vec3 volumetricGodray = upsampleGodray(texcoord) * VOLUMETRIC_EXPOSURE;
+  vec3 rayContribution = godray * GODRAY_EXPOSURE * edgeFade + volumetricGodray;
+  rayContribution = rayContribution / (vec3(1.0) + rayContribution * RAY_SOFT_CLIP);
+  color.rgb += rayContribution;
     color.a = 1.0;
 }
