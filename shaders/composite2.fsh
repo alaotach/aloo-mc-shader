@@ -5,6 +5,7 @@ uniform sampler2D colortex3;
 uniform sampler2D colortex4; // Translucents (e.g. glass/water)
 uniform sampler2D depthtex0;
 uniform vec3 shadowLightPosition;
+uniform int worldTime;
 
 const float BLOOM_THRESHOLD = 1.24;
 uniform mat4 gbufferProjection;
@@ -56,9 +57,13 @@ void main() {
     color = texture(colortex0, texcoord);
   vec3 godray = vec3(0.0);
   float edgeFade = 0.0;
+  float worldTimeF = float(worldTime);
+  float duskFade = 1.0 - smoothstep(12000.0, 13500.0, worldTimeF);
+  float dawnFade = smoothstep(22500.0, 23500.0, worldTimeF);
+  float dayVisibility = max(duskFade, dawnFade);
 
     vec4 sunClip = gbufferProjection * vec4(shadowLightPosition * 1000.0, 1.0);
-  if (sunClip.w > 0.0) {
+  if (sunClip.w > 0.0 && dayVisibility > 0.001) {
     vec3 sunNdc = sunClip.xyz / sunClip.w;
     vec2 sunScreenPos = sunNdc.xy * 0.5 + 0.5;
     vec2 clampedSunPos = clamp(sunScreenPos, 0.0, 1.0);
@@ -91,7 +96,7 @@ void main() {
     }
     }
 
-  vec3 volumetricGodray = upsampleGodray(texcoord) * VOLUMETRIC_EXPOSURE;
+  vec3 volumetricGodray = upsampleGodray(texcoord) * VOLUMETRIC_EXPOSURE * dayVisibility;
   vec3 rayContribution = godray * GODRAY_EXPOSURE * edgeFade + volumetricGodray;
   rayContribution = rayContribution / (vec3(1.0) + rayContribution * RAY_SOFT_CLIP);
   color.rgb += rayContribution;

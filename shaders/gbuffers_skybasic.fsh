@@ -7,6 +7,7 @@ uniform mat4 gbufferModelView;
 uniform mat4 gbufferProjectionInverse;
 uniform vec3 fogColor;
 uniform vec3 skyColor;
+uniform int worldTime;
 
 in vec4 glcolor;
 
@@ -29,10 +30,17 @@ vec3 screenToView(vec3 screenPos) {
 layout(location = 0) out vec4 color;
 
 void main() {
+	float worldTimeF = float(worldTime);
+	float duskFade = 1.0 - smoothstep(12000.0, 13500.0, worldTimeF);
+	float dawnFade = smoothstep(22500.0, 23500.0, worldTimeF);
+	float dayVisibility = max(duskFade, dawnFade);
+
 	if (renderStage == MC_RENDER_STAGE_STARS) {
 		color = glcolor;
 	} else {
 		vec3 pos = screenToView(vec3(gl_FragCoord.xy / vec2(viewWidth, viewHeight), 1.0));
-		color = vec4(calcSkyColor(normalize(pos)), 1.0);
+		vec3 sky = calcSkyColor(normalize(pos));
+		sky *= mix(0.32, 1.0, dayVisibility);
+		color = vec4(sky, 1.0);
 	}
 }

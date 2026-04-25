@@ -24,9 +24,9 @@ const vec3 blocklightColor = vec3(1.0, 0.5, 0.08);
 const vec3 sunlightColor = vec3(1.0, 1.0, 0.9);
 const vec3 skylightColorDay = vec3(0.05, 0.15, 0.3);
 const vec3 ambientColorDay = vec3(0.1);
-const vec3 moonlightColor = vec3(0.02, 0.04, 0.08);
-const vec3 skylightColorNight = vec3(0.01, 0.02, 0.04);
-const vec3 ambientColorNight = vec3(0.02);
+const vec3 moonlightColor = vec3(0.006, 0.011, 0.022);
+const vec3 skylightColorNight = vec3(0.0025, 0.005, 0.011);
+const vec3 ambientColorNight = vec3(0.007);
 
 
 in vec2 texcoord;
@@ -98,10 +98,13 @@ void main() {
 
     vec3 shadow = getShadowPcf(shadowScreenPos);
 
-    float timeMask = (worldTime < 13000 || worldTime > 23000) ? 1.0 : 0.0;    
-    vec3 currSunlightColor = mix(moonlightColor, sunlightColor, timeMask);
-    vec3 currSkylightColor = mix(skylightColorNight, skylightColorDay, timeMask);
-    vec3 currAmbientColor = mix(ambientColorNight, ambientColorDay, timeMask);
+    float worldTimeF = float(worldTime);
+    float duskFade = 1.0 - smoothstep(12000.0, 13500.0, worldTimeF);
+    float dawnFade = smoothstep(22500.0, 23500.0, worldTimeF);
+    float dayVisibility = max(duskFade, dawnFade);
+    vec3 currSunlightColor = mix(moonlightColor, sunlightColor, dayVisibility);
+    vec3 currSkylightColor = mix(skylightColorNight, skylightColorDay, dayVisibility);
+    vec3 currAmbientColor = mix(ambientColorNight, ambientColorDay, dayVisibility);
 
     vec3 blocklight = lightmap.x * blocklightColor;
     vec3 skylight = lightmap.y * currSkylightColor;

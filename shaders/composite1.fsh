@@ -102,8 +102,10 @@ void main() {
     vec3 sunWorldDir = normalize(mat3(gbufferModelViewInverse) * sunViewDir);
     float sunElevation = sunWorldDir.y;
 
-    // time maask for variable color and intensity of light
-    float timeMask = (worldTime < 13000 || worldTime > 23000) ? 1.0 : 0.0;
+    float worldTimeF = float(worldTime);
+    float duskFade = 1.0 - smoothstep(12000.0, 13500.0, worldTimeF);
+    float dawnFade = smoothstep(22500.0, 23500.0, worldTimeF);
+    float dayVisibility = max(duskFade, dawnFade);
     vec3 ndcPos = vec3(volumetricUv.xy, sceneDepth) * 2.0 - 1.0;
     vec3 viewPos = projectAndDivide(gbufferProjectionInverse, ndcPos);
     float dist = length(viewPos) / far;
@@ -176,14 +178,19 @@ void main() {
 
     float warmTint = smoothstep(0.0, 0.15, sunElevation);
     vec3 sunriseTint = mix(vec3(1.25, 0.72, 0.42), vec3(1.0, 0.95, 0.8), warmTint);
-    vec3 moonTint = vec3(0.03, 0.07, 0.15);
-    vec3 baseRayColor = mix(moonTint, sunriseTint, timeMask);
+    vec3 baseRayColor = sunriseTint;
     float offAngleLift = mix(1.18, 1.0, forwardScattering);
-    vec3 currentGodray = baseRayColor * intensity * GODRAY_STRENGTH * phaseFunction * offAngleLift;
+    vec3 currentGodray = baseRayColor * intensity * GODRAY_STRENGTH * phaseFunction * offAngleLift * dayVisibility;
     vec3 temporalGodray = currentGodray;
     godrayOut = vec4(temporalGodray, 1.0);
 
+    float nightamt = 1.0 - dayVisibility;
+    vec3 gradfog = pow(fogColor, vec3(2.2));
+    float gray = dot(gradfog, vec3(0.21, 0.71, 0.07));
+    gradfog = mix(vec3(gray), gradfog, 1.0 - nightamt * 0.40);
+    gradfog *= mix(0.08, 1.0, dayVisibility);
+
     color.rgb = baseColor.rgb;
-    color.rgb = mix(color.rgb, pow(fogColor, vec3(2.2)), clamp(fogFactor, 0.0, 1.0));
+    color.rgb = mix(color.rgb, gradfog, clamp(fogFactor, 0.0, 1.0));
     color.a = 1.0;
 }
