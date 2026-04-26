@@ -12,7 +12,21 @@ in vec4 glcolor;
 layout(location = 0) out vec4 color;
 
 void main() {
-	color = texture(gtexture, texcoord) * glcolor;
+	vec2 centerUV = texcoord - 0.5;
+	float angle = 0.8;
+	float c = cos(angle);
+	float s = sin(angle);
+	vec2 texSize = vec2(textureSize(gtexture, 0));
+	float aspect = texSize.x / texSize.y;
+	centerUV.x *= aspect;
+	centerUV = mat2(c, -s, s, c) * centerUV;
+	centerUV.x /= aspect;
+	vec2 rotUV = centerUV + 0.5;
+	if (rotUV.x < 0.0 || rotUV.x > 1.0 ||
+	    rotUV.y < 0.0 || rotUV.y > 1.0) {
+	    discard;
+	}
+	color = texture(gtexture, rotUV) * glcolor;
 	float worldTimeF = float(worldTime);
 	float duskFade = 1.0 - smoothstep(12000.0, 13500.0, worldTimeF);
 	float dawnFade = smoothstep(22500.0, 23500.0, worldTimeF);
