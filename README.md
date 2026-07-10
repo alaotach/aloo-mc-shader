@@ -1,14 +1,28 @@
-Welcome! This is a template for developing a 1.21.5 Minecraft shader with Iris. All shader files are in the `shaders` folder. They currently don't do anything special.
+# Godrays Shader
 
-From the terminal, you can run:
-- `gradlew runShaderClient` to launch the client with Iris with your shaderpack automatically applied
-- `gradlew assemble` to put all shaderpack files into a ready ZIP file. You'll find your shader under [./build/releases](./build/releases)!
+A Minecraft shader. Its standout feature is volumetric Godrays, casting beautiful beams of sunlight through windows and all which looks awesome and it is also tinted from the colored glass.
 
-## What now?
-Take a look at some guides! We recommend the [Hack Club Lumen guides](https://lumen.hackcraft.hackclub.com/guides) and the official [Iris tutorials](https://shaders.properties/current/guides/your-first-shaderpack/0_intro/).
+## Features
 
-After you're done developing your shader, we recommend publishing it to [Modrinth](https://modrinth.com). You can also submit it to [Hack Club Lumen](https://lumen.hackcraft.hackclub.com) to get free Minecraft _or_ get your hands on a shiny new GPU!
+* Volumetric Godrays
+* Enhanced lighting
+* Improved atmosphere
+* Lightweight and performance-friendly
+* Works great for exploration, building, and screenshots
 
-## Notes
+## Installation
 
-The Gradle files are completely optional, and exist to help you debug your shader. You can delete them if you want. This template is based on the [official ShaderLABS template](https://github.com/shaderLABS/Base-330).
+1. Install **OptiFine**.
+2. Download the latest release of the shader.
+3. Copy the shader ZIP file into your Minecraft `shaderpacks` folder.
+4. Launch Minecraft and enable the shader from **Video Settings → Shaders**.
+
+## Demo
+
+https://github.com/user-attachments/assets/615c8f8d-293c-425b-9250-8c5ea80711db
+
+https://github.com/user-attachments/assets/5c5248f1-ea18-4665-b44e-7de239f7f11b
+
+## Compatibility
+
+* Minecraft: 1.21.5
