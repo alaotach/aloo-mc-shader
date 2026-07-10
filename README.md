@@ -7,8 +7,6 @@ A Minecraft shader. Its standout feature is volumetric Godrays, casting beautifu
 * Volumetric Godrays
 * Enhanced lighting
 * Improved atmosphere
-* Lightweight and performance-friendly
-* Works great for exploration, building, and screenshots
 
 ## Installation
 
